@@ -5,7 +5,7 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   if (isPlaying) {
-    return <LevelsPage />;
+    return <LevelsPage onBackToHome={() => setIsPlaying(false)} />;
   }
 
   return (
