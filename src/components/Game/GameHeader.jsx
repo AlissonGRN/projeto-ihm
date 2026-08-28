@@ -1,27 +1,28 @@
 export function GameHeader({ levelNumber, lives, onBack }) {
   return (
-    <header className="flex justify-between items-center bg-white px-6 py-4 rounded-xl shadow-sm border border-gray-100 mb-6">
+    <div className="flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
       <button
         onClick={onBack}
-        className="text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
+        className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
       >
         ← Voltar aos Níveis
       </button>
 
-      <h1 className="text-xl font-bold text-gray-800">
+      <span className="text-lg font-bold text-gray-900">
         Nível {levelNumber}
-      </h1>
+      </span>
 
-      <div className="flex items-center gap-1">
-        {[1, 2, 3].map((life) => (
+      <div className="flex items-center space-x-1.5">
+        {[1, 2, 3].map((heartIndex) => (
           <span
-            key={life}
-            className={`text-xl ${life <= lives ? 'text-red-500' : 'text-gray-300'}`}
+            key={heartIndex}
+            className={`text-lg transition-opacity duration-300 ${heartIndex <= lives ? 'opacity-100' : 'opacity-20 grayscale'
+              }`}
           >
             ❤️
           </span>
         ))}
       </div>
-    </header>
+    </div>
   );
 }

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { GameHeader } from '../components/Game/GameHeader';
 import { MissionBriefing } from '../components/Game/MissionBriefing';
 import { SqlEditor } from '../components/Game/SqlEditor';
+import { SuccessModal } from '../components/Game/SuccessModal';
+import { ErrorToast } from '../components/Game/ErrorToast';
 import { createMissionDatabase, executeQuery } from '../services/database';
 import { levelsData } from '../data/levelsData';
 
@@ -11,8 +13,7 @@ export function GamePage({ onBack }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [query, setQuery] = useState('');
   const [db, setDb] = useState(null);
-  const [feedbackMessage, setFeedbackMessage] = useState('');
-  const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [queryResult, setQueryResult] = useState(null);
   const [isSuccessState, setIsSuccessState] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
@@ -32,8 +33,7 @@ export function GamePage({ onBack }) {
     setLives(3);
     setCurrentStep(0);
     setQuery('');
-    setFeedbackMessage('');
-    setIsError(false);
+    setErrorMessage('');
     setQueryResult(null);
     setIsSuccessState(false);
     setIsGameOver(false);
@@ -45,6 +45,7 @@ export function GamePage({ onBack }) {
   const handleSubmit = () => {
     if (!db) return;
 
+    setErrorMessage('');
     const result = executeQuery(db, query);
 
     if (!result.success) {
@@ -56,20 +57,16 @@ export function GamePage({ onBack }) {
 
     if (!isCorrect) {
       handleWrongAnswer('A query rodou, mas o resultado não atende ao objetivo da missão.');
-      setQueryResult(result);
       return;
     }
 
-    setIsError(false);
     setQueryResult(result);
-    setFeedbackMessage('Missão concluída com sucesso!');
     setIsSuccessState(true);
   };
 
   const handleNextMission = () => {
     setIsSuccessState(false);
     setQuery('');
-    setFeedbackMessage('');
     setQueryResult(null);
 
     if (currentStep + 1 < currentLevel.missions.length) {
@@ -82,8 +79,11 @@ export function GamePage({ onBack }) {
   const handleWrongAnswer = (message) => {
     const nextLives = lives - 1;
     setLives(nextLives);
-    setIsError(true);
-    setFeedbackMessage(message);
+    setErrorMessage(message);
+
+    setTimeout(() => {
+      setErrorMessage('');
+    }, 4000);
 
     if (nextLives <= 0) {
       setIsGameOver(true);
@@ -124,7 +124,13 @@ export function GamePage({ onBack }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 font-sans">
+    <div className="min-h-screen bg-gray-50 py-8 px-4 font-sans relative">
+      <ErrorToast message={errorMessage} />
+
+      {isSuccessState && (
+        <SuccessModal result={queryResult} onNext={handleNextMission} />
+      )}
+
       <div className="max-w-2xl mx-auto">
         <GameHeader
           levelNumber={currentMission.id}
@@ -138,53 +144,8 @@ export function GamePage({ onBack }) {
           query={query}
           setQuery={setQuery}
           onSubmit={handleSubmit}
-          isError={isError}
+          isError={!!errorMessage}
         />
-
-        {feedbackMessage && !isSuccessState && (
-          <div className="mt-4 p-4 rounded-lg text-sm font-medium bg-red-100 text-red-700">
-            {feedbackMessage}
-          </div>
-        )}
-
-        {isSuccessState && (
-          <div className="mt-6 bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center shadow-sm">
-            <h3 className="text-lg font-bold text-emerald-800 mb-2">Missão Concluída!</h3>
-            <p className="text-emerald-700 text-sm mb-4">Seu resultado está correto e validado com sucesso.</p>
-            <button
-              onClick={handleNextMission}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors cursor-pointer"
-            >
-              Avançar para a Próxima Etapa →
-            </button>
-          </div>
-        )}
-
-        {queryResult && queryResult.values && queryResult.values.length > 0 && (
-          <div className="mt-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4 overflow-x-auto">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
-              Resultado da Consulta:
-            </span>
-            <table className="w-full text-left text-sm text-gray-600 font-mono">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  {queryResult.columns.map((col, idx) => (
-                    <th key={idx} className="pb-2 font-semibold text-gray-800">{col}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {queryResult.values.map((row, rowIdx) => (
-                  <tr key={rowIdx} className="border-b border-gray-100">
-                    {row.map((val, valIdx) => (
-                      <td key={valIdx} className="py-2">{val}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </div>
   );
