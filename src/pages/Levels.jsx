@@ -1,60 +1,47 @@
-import { useState, useEffect } from 'react';
-import { LevelGrid } from '../components/LevelSelector/LevelGrid';
-import { GamePage } from './GamePage';
+import { LevelCard } from '../components/LevelSelector/LevelCard';
+import { levelsData } from '../data/levelsData';
+import { getGameProgress } from '../services/storage';
 
-const mockLevels = [
-  { id: 'lvl_1', number: 1, status: 'unlocked', stars: 0 },
-  { id: 'lvl_2', number: 2, status: 'locked', stars: 0 },
-  { id: 'lvl_3', number: 3, status: 'locked', stars: 0 },
-];
+export function LevelsPage(props) {
+  const handleSelect = props.onLevelSelect || props.onSelectLevel || props.onSelect || (() => { });
+  const progress = getGameProgress();
 
-export function LevelsPage({ onBackToHome }) {
-  const [levels, setLevels] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedLevel, setSelectedLevel] = useState(null);
+  const totalPossibleStars = levelsData.reduce((acc, level) => {
+    const count = level.missions ? level.missions.length : (level.totalMissions || 0);
+    return acc + count;
+  }, 0);
 
-  useEffect(() => {
-    const fetchProgress = async () => {
-      setTimeout(() => {
-        setLevels(mockLevels);
-        setIsLoading(false);
-      }, 300);
-    };
-    fetchProgress();
-  }, []);
-
-  if (selectedLevel) {
-    return <GamePage onBack={() => setSelectedLevel(null)} />;
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-blue-600 font-semibold">Carregando mapa...</p>
-      </div>
-    );
-  }
+  const totalEarnedStars = Object.values(progress.stars || {}).reduce((acc, stars) => acc + stars, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4 font-sans">
-      <div className="max-w-3xl w-full">
-        <header className="flex justify-between items-center mb-10">
-          <button
-            onClick={onBackToHome}
-            className="text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            ← Início
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900">Selecione o Nível</h1>
-          <div className="bg-white px-4 py-2 rounded-full shadow-sm font-semibold text-gray-700 border border-gray-100">
-            Estrelas: {levels.reduce((acc, lvl) => acc + (lvl.stars || 0), 0)} ⭐
+    <div className="min-h-screen bg-gray-50 py-12 px-4 font-sans">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-between items-end mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Módulos de Treinamento</h1>
+            <p className="text-gray-600 mt-2">Selecione um nível para continuar sua jornada.</p>
           </div>
-        </header>
+          <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg font-bold text-lg border border-yellow-200 flex items-center gap-2 shadow-sm">
+            <span>⭐</span>
+            <span>{totalEarnedStars} / {totalPossibleStars}</span>
+          </div>
+        </div>
 
-        <LevelGrid
-          levels={levels}
-          onLevelSelect={(id) => setSelectedLevel(id)}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {levelsData.map((level, index) => {
+            const safeLevelId = level.id !== undefined ? level.id : index + 1;
+            const safeLevel = { ...level, id: safeLevelId };
+
+            return (
+              <LevelCard
+                key={safeLevelId}
+                level={safeLevel}
+                progress={progress}
+                onSelect={() => handleSelect(safeLevel)}
+              />
+            );
+          })}
+        </div>
       </div>
     </div>
   );
