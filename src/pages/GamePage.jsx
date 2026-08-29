@@ -6,11 +6,18 @@ import { SuccessModal } from '../components/Game/SuccessModal';
 import { ErrorToast } from '../components/Game/ErrorToast';
 import { createMissionDatabase, executeQuery } from '../services/database';
 import { levelsData } from '../data/levelsData';
+import { getGameProgress, saveGameProgress } from '../services/storage';
 
 export function GamePage({ onBack }) {
   const currentLevel = levelsData[0];
+
+  // Recupera a missão salva ou começa da primeira
+  const savedProgress = getGameProgress();
+  const initialStepIndex = currentLevel.missions.findIndex(m => m.id === savedProgress.currentMissionId);
+  const startingStep = initialStepIndex !== -1 ? initialStepIndex : 0;
+
   const [lives, setLives] = useState(3);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(startingStep);
   const [query, setQuery] = useState('');
   const [db, setDb] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -38,7 +45,10 @@ export function GamePage({ onBack }) {
     setIsSuccessState(false);
     setIsGameOver(false);
     setIsLevelCompleted(false);
-    const database = await createMissionDatabase(levelsData[0].missions[0].setupSql);
+
+    saveGameProgress({ unlockedLevel: 1, currentMissionId: currentLevel.missions[0].id });
+
+    const database = await createMissionDatabase(currentLevel.missions[0].setupSql);
     setDb(database);
   };
 
@@ -70,7 +80,13 @@ export function GamePage({ onBack }) {
     setQueryResult(null);
 
     if (currentStep + 1 < currentLevel.missions.length) {
-      setCurrentStep(prev => prev + 1);
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+
+      saveGameProgress({
+        unlockedLevel: 1,
+        currentMissionId: currentLevel.missions[nextStep].id
+      });
     } else {
       setIsLevelCompleted(true);
     }
