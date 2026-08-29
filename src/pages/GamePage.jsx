@@ -5,15 +5,11 @@ import { SqlEditor } from '../components/Game/SqlEditor';
 import { SuccessModal } from '../components/Game/SuccessModal';
 import { ErrorToast } from '../components/Game/ErrorToast';
 import { createMissionDatabase, executeQuery } from '../services/database';
-import { levelsData } from '../data/levelsData';
 import { getGameProgress, saveGameProgress } from '../services/storage';
 
-export function GamePage({ onBack }) {
-  const currentLevel = levelsData[0];
-
-  // Recupera a missão salva ou começa da primeira
+export function GamePage({ level, onBack }) {
   const savedProgress = getGameProgress();
-  const initialStepIndex = currentLevel.missions.findIndex(m => m.id === savedProgress.currentMissionId);
+  const initialStepIndex = level.missions.findIndex(m => m.id === savedProgress.currentMissionId);
   const startingStep = initialStepIndex !== -1 ? initialStepIndex : 0;
 
   const [lives, setLives] = useState(3);
@@ -26,7 +22,7 @@ export function GamePage({ onBack }) {
   const [isGameOver, setIsGameOver] = useState(false);
   const [isLevelCompleted, setIsLevelCompleted] = useState(false);
 
-  const currentMission = currentLevel.missions[currentStep];
+  const currentMission = level.missions[currentStep];
 
   useEffect(() => {
     async function setupDb() {
@@ -46,9 +42,10 @@ export function GamePage({ onBack }) {
     setIsGameOver(false);
     setIsLevelCompleted(false);
 
-    saveGameProgress({ unlockedLevel: 1, currentMissionId: currentLevel.missions[0].id });
+    const progress = getGameProgress();
+    saveGameProgress({ ...progress, currentMissionId: level.missions[0].id });
 
-    const database = await createMissionDatabase(currentLevel.missions[0].setupSql);
+    const database = await createMissionDatabase(level.missions[0].setupSql);
     setDb(database);
   };
 
@@ -72,23 +69,34 @@ export function GamePage({ onBack }) {
 
     setQueryResult(result);
     setIsSuccessState(true);
+
+    const progress = getGameProgress();
+    progress.stars[currentMission.id] = 1;
+    saveGameProgress(progress);
   };
 
   const handleNextMission = () => {
     setIsSuccessState(false);
     setQuery('');
     setQueryResult(null);
+    setLives(3);
 
-    if (currentStep + 1 < currentLevel.missions.length) {
+    const progress = getGameProgress();
+
+    if (currentStep + 1 < level.missions.length) {
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
 
       saveGameProgress({
-        unlockedLevel: 1,
-        currentMissionId: currentLevel.missions[nextStep].id
+        ...progress,
+        currentMissionId: level.missions[nextStep].id
       });
     } else {
       setIsLevelCompleted(true);
+      saveGameProgress({
+        ...progress,
+        unlockedLevel: Math.max(progress.unlockedLevel, level.id + 1)
+      });
     }
   };
 
@@ -130,7 +138,7 @@ export function GamePage({ onBack }) {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
         <div className="max-w-md w-full bg-white rounded-xl shadow-md p-8 border border-gray-100 text-center">
           <h2 className="text-2xl font-bold text-emerald-600 mb-2">Parabéns!</h2>
-          <p className="text-gray-600 text-sm mb-6">Você concluiu todas as etapas do Nível 1 com sucesso!</p>
+          <p className="text-gray-600 text-sm mb-6">Você concluiu todas as etapas do Nível {level.id} com sucesso!</p>
           <button onClick={onBack} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors cursor-pointer">
             Voltar aos Níveis
           </button>
@@ -153,9 +161,7 @@ export function GamePage({ onBack }) {
           lives={lives}
           onBack={onBack}
         />
-
         <MissionBriefing mission={currentMission} />
-
         <SqlEditor
           query={query}
           setQuery={setQuery}

@@ -1,47 +1,59 @@
-export function SuccessModal({ result, onNext }) {
+export function SuccessModal({ result, onNext, stars }) {
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 border border-gray-100">
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full mb-3 text-xl font-bold">
-            ✓
+    <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+
+        <div className="p-6 text-center border-b border-gray-100 bg-emerald-50">
+          <div className="flex justify-center gap-2 mb-3">
+            {[1, 2, 3].map((star) => (
+              <span
+                key={star}
+                className={`text-4xl ${star <= stars ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-300 grayscale opacity-50'}`}
+              >
+                ⭐
+              </span>
+            ))}
           </div>
-          <h3 className="text-xl font-bold text-gray-900">Missão Concluída!</h3>
-          <p className="text-gray-600 text-sm mt-1">Seu resultado está correto e validado com sucesso.</p>
+          <h2 className="text-2xl font-bold text-emerald-700">Missão Cumprida!</h2>
+          <p className="text-emerald-600 mt-1">A query retornou {result.values.length} registro(s).</p>
         </div>
 
-        {result && result.values && result.values.length > 0 && (
-          <div className="mb-6 bg-gray-50 rounded-xl p-4 border border-gray-200 max-h-60 overflow-y-auto">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
-              Resultado Obtido:
-            </span>
-            <table className="w-full text-left text-sm text-gray-600 font-mono">
-              <thead>
-                <tr className="border-b border-gray-200">
+        <div className="p-6 overflow-auto bg-gray-50 flex-1">
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead className="bg-gray-100">
+                <tr>
                   {result.columns.map((col, idx) => (
-                    <th key={idx} className="pb-2 font-semibold text-gray-800">{col}</th>
+                    <th key={idx} className="p-3 border-b border-gray-200 font-semibold text-gray-700">
+                      {col}
+                    </th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
-                {result.values.map((row, rowIdx) => (
-                  <tr key={rowIdx} className="border-b border-gray-100">
-                    {row.map((val, valIdx) => (
-                      <td key={valIdx} className="py-2">{val}</td>
+              <tbody className="bg-white">
+                {result.values.map((row, rowIndex) => (
+                  <tr key={rowIndex} className="hover:bg-gray-50">
+                    {row.map((val, valIndex) => (
+                      <td key={valIndex} className="p-3 border-b border-gray-100 text-gray-600">
+                        {val !== null ? val.toString() : 'NULL'}
+                      </td>
                     ))}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        )}
+        </div>
 
-        <button
-          onClick={onNext}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors cursor-pointer shadow-sm"
-        >
-          Avançar para a Próxima Etapa →
-        </button>
+        <div className="p-6 bg-white border-t border-gray-100">
+          <button
+            onClick={onNext}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-sm"
+          >
+            Próxima Missão
+          </button>
+        </div>
+
       </div>
     </div>
   );
