@@ -70,3 +70,26 @@ SELECT alunos.nome, disciplinas.nome_disciplina, matriculas.nota
 FROM alunos 
 INNER JOIN matriculas ON alunos.id = matriculas.aluno_id 
 INNER JOIN disciplinas ON matriculas.disciplina_id = disciplinas.id;
+
+--- NÍVEL 6: Consultas Aninhadas ---
+
+6.1 O Sub-Filtro (IN)
+SELECT nome FROM alunos WHERE id IN (SELECT aluno_id FROM matriculas);
+
+6.2 Os Ociosos (NOT IN)
+SELECT nome FROM alunos WHERE id NOT IN (SELECT aluno_id FROM matriculas);
+
+6.3 A Verificação (EXISTS)
+SELECT nome_disciplina FROM disciplinas d WHERE EXISTS (SELECT 1 FROM matriculas m WHERE m.disciplina_id = d.id);
+
+
+--- NÍVEL 7: Manutenção de Dados ---
+
+7.1 Novo Aluno (INSERT)
+INSERT INTO alunos (id, nome, turno, data_nascimento) VALUES (7, 'Julio', 'Manha', '2003-01-15');
+
+7.2 Ajuste de Turno (UPDATE)
+UPDATE alunos SET turno = 'Manha' WHERE id = 4;
+
+7.3 A Grande Limpeza (DELETE)
+DELETE FROM alunos_inativos WHERE ano_cancelamento < 2020;
