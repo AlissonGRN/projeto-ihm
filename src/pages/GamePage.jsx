@@ -13,15 +13,14 @@ export function GamePage({ level, onBack }) {
     setQuery,
     errorMessage,
     queryResult,
-    isSuccessState,
-    isGameOver,
-    isLevelCompleted,
+    gameState,
     handleSubmit,
     handleNextMission,
     handleRestartLevel
   } = useGameEngine(level);
 
-  if (isGameOver) {
+  // Controle de interface baseado estritamente na Máquina de Estados
+  if (gameState === 'game_over') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
         <div className="max-w-md w-full bg-white rounded-xl shadow-md p-8 border border-gray-100 text-center">
@@ -40,7 +39,7 @@ export function GamePage({ level, onBack }) {
     );
   }
 
-  if (isLevelCompleted) {
+  if (gameState === 'level_completed') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
         <div className="max-w-md w-full bg-white rounded-xl shadow-md p-8 border border-gray-100 text-center">
@@ -58,7 +57,7 @@ export function GamePage({ level, onBack }) {
     <div className="min-h-screen bg-gray-50 py-8 px-4 font-sans relative">
       <ErrorToast message={errorMessage} />
 
-      {isSuccessState && (
+      {gameState === 'success' && (
         <SuccessModal result={queryResult} onNext={handleNextMission} />
       )}
 

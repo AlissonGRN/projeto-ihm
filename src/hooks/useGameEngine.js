@@ -14,10 +14,8 @@ export function useGameEngine(level) {
   const [errorMessage, setErrorMessage] = useState('');
   const [queryResult, setQueryResult] = useState(null);
 
-  // Estados da tela
-  const [isSuccessState, setIsSuccessState] = useState(false);
-  const [isGameOver, setIsGameOver] = useState(false);
-  const [isLevelCompleted, setIsLevelCompleted] = useState(false);
+  // Máquina de Estados: 'playing' | 'success' | 'game_over' | 'level_completed'
+  const [gameState, setGameState] = useState('playing');
 
   const currentMission = level.missions[currentStep];
 
@@ -35,9 +33,7 @@ export function useGameEngine(level) {
     setQuery('');
     setErrorMessage('');
     setQueryResult(null);
-    setIsSuccessState(false);
-    setIsGameOver(false);
-    setIsLevelCompleted(false);
+    setGameState('playing'); // Reseta a máquina de estados
 
     const progress = getGameProgress();
     saveGameProgress({ ...progress, currentMissionId: level.missions[0].id });
@@ -56,14 +52,13 @@ export function useGameEngine(level) {
     }, 4000);
 
     if (nextLives <= 0) {
-      setIsGameOver(true);
+      setGameState('game_over'); // Transição de estado
     }
   };
 
   const handleSubmit = async () => {
     setErrorMessage('');
 
-    // Recria o banco a cada tentativa para evitar "banco sujo"
     const freshDb = await createMissionDatabase(currentMission.setupSql);
     const result = executeQuery(freshDb, query);
 
@@ -81,7 +76,7 @@ export function useGameEngine(level) {
 
     setDb(freshDb);
     setQueryResult(result);
-    setIsSuccessState(true);
+    setGameState('success'); // Transição de estado
 
     const progress = getGameProgress();
     progress.stars[currentMission.id] = 1;
@@ -89,7 +84,6 @@ export function useGameEngine(level) {
   };
 
   const handleNextMission = () => {
-    setIsSuccessState(false);
     setQuery('');
     setQueryResult(null);
     setLives(3);
@@ -99,13 +93,15 @@ export function useGameEngine(level) {
     if (currentStep + 1 < level.missions.length) {
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
+      setGameState('playing'); // Volta a jogar
 
       saveGameProgress({
         ...progress,
         currentMissionId: level.missions[nextStep].id
       });
     } else {
-      setIsLevelCompleted(true);
+      setGameState('level_completed'); // Terminou o nível
+
       saveGameProgress({
         ...progress,
         unlockedLevel: Math.max(progress.unlockedLevel, level.id + 1)
@@ -120,9 +116,7 @@ export function useGameEngine(level) {
     setQuery,
     errorMessage,
     queryResult,
-    isSuccessState,
-    isGameOver,
-    isLevelCompleted,
+    gameState, // Exportamos apenas o estado atual
     handleSubmit,
     handleNextMission,
     handleRestartLevel
