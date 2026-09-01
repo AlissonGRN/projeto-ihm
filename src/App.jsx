@@ -12,8 +12,8 @@ export default function App() {
     setCurrentScreen('levels');
   };
 
-  const handleLevelSelect = (levelId) => {
-    const level = levelsData.find(l => l.id === levelId);
+  // Recebe diretamente o objeto do nível vindo da LevelsPage
+  const handleLevelSelect = (level) => {
     setSelectedLevel(level);
     setCurrentScreen('game');
   };
