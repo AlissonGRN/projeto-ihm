@@ -1,120 +1,25 @@
-import { useState, useEffect } from 'react';
 import { GameHeader } from '../components/Game/GameHeader';
 import { MissionBriefing } from '../components/Game/MissionBriefing';
 import { SqlEditor } from '../components/Game/SqlEditor';
 import { SuccessModal } from '../components/Game/SuccessModal';
 import { ErrorToast } from '../components/Game/ErrorToast';
-import { createMissionDatabase, executeQuery } from '../services/database';
-import { getGameProgress, saveGameProgress } from '../services/storage';
+import { useGameEngine } from '../hooks/useGameEngine';
 
 export function GamePage({ level, onBack }) {
-  const savedProgress = getGameProgress();
-  const initialStepIndex = level.missions.findIndex(m => m.id === savedProgress.currentMissionId);
-  const startingStep = initialStepIndex !== -1 ? initialStepIndex : 0;
+  const {
+    lives,
+    currentMission,
+    query,
+    setQuery,
+    errorMessage,
+    queryResult,
+    gameState,
+    handleSubmit,
+    handleNextMission,
+    handleRestartLevel
+  } = useGameEngine(level);
 
-  const [lives, setLives] = useState(3);
-  const [currentStep, setCurrentStep] = useState(startingStep);
-  const [query, setQuery] = useState('');
-  const [db, setDb] = useState(null);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [queryResult, setQueryResult] = useState(null);
-  const [isSuccessState, setIsSuccessState] = useState(false);
-  const [isGameOver, setIsGameOver] = useState(false);
-  const [isLevelCompleted, setIsLevelCompleted] = useState(false);
-
-  const currentMission = level.missions[currentStep];
-
-  useEffect(() => {
-    async function setupDb() {
-      const database = await createMissionDatabase(currentMission.setupSql);
-      setDb(database);
-    }
-    setupDb();
-  }, [currentStep]);
-
-  const handleRestartLevel = async () => {
-    setLives(3);
-    setCurrentStep(0);
-    setQuery('');
-    setErrorMessage('');
-    setQueryResult(null);
-    setIsSuccessState(false);
-    setIsGameOver(false);
-    setIsLevelCompleted(false);
-
-    const progress = getGameProgress();
-    saveGameProgress({ ...progress, currentMissionId: level.missions[0].id });
-
-    const database = await createMissionDatabase(level.missions[0].setupSql);
-    setDb(database);
-  };
-
-  const handleSubmit = () => {
-    if (!db) return;
-
-    setErrorMessage('');
-    const result = executeQuery(db, query);
-
-    if (!result.success) {
-      handleWrongAnswer(`Erro de Sintaxe: ${result.error}`);
-      return;
-    }
-
-    const isCorrect = currentMission.validate(result);
-
-    if (!isCorrect) {
-      handleWrongAnswer('A query rodou, mas o resultado não atende ao objetivo da missão.');
-      return;
-    }
-
-    setQueryResult(result);
-    setIsSuccessState(true);
-
-    const progress = getGameProgress();
-    progress.stars[currentMission.id] = 1;
-    saveGameProgress(progress);
-  };
-
-  const handleNextMission = () => {
-    setIsSuccessState(false);
-    setQuery('');
-    setQueryResult(null);
-    setLives(3);
-
-    const progress = getGameProgress();
-
-    if (currentStep + 1 < level.missions.length) {
-      const nextStep = currentStep + 1;
-      setCurrentStep(nextStep);
-
-      saveGameProgress({
-        ...progress,
-        currentMissionId: level.missions[nextStep].id
-      });
-    } else {
-      setIsLevelCompleted(true);
-      saveGameProgress({
-        ...progress,
-        unlockedLevel: Math.max(progress.unlockedLevel, level.id + 1)
-      });
-    }
-  };
-
-  const handleWrongAnswer = (message) => {
-    const nextLives = lives - 1;
-    setLives(nextLives);
-    setErrorMessage(message);
-
-    setTimeout(() => {
-      setErrorMessage('');
-    }, 4000);
-
-    if (nextLives <= 0) {
-      setIsGameOver(true);
-    }
-  };
-
-  if (isGameOver) {
+  if (gameState === 'game_over') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
         <div className="max-w-md w-full bg-white rounded-xl shadow-md p-8 border border-gray-100 text-center">
@@ -133,7 +38,7 @@ export function GamePage({ level, onBack }) {
     );
   }
 
-  if (isLevelCompleted) {
+  if (gameState === 'level_completed') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
         <div className="max-w-md w-full bg-white rounded-xl shadow-md p-8 border border-gray-100 text-center">
@@ -151,8 +56,12 @@ export function GamePage({ level, onBack }) {
     <div className="min-h-screen bg-gray-50 py-8 px-4 font-sans relative">
       <ErrorToast message={errorMessage} />
 
-      {isSuccessState && (
-        <SuccessModal result={queryResult} onNext={handleNextMission} />
+      {gameState === 'success' && (
+        <SuccessModal
+          result={queryResult}
+          onNext={handleNextMission}
+          earnedStars={lives}
+        />
       )}
 
       <div className="max-w-2xl mx-auto">
