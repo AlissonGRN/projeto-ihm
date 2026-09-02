@@ -13,18 +13,24 @@ export function useGameEngine(level) {
   const [db, setDb] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [queryResult, setQueryResult] = useState(null);
-
-  // Máquina de Estados: 'playing' | 'success' | 'game_over' | 'level_completed'
   const [gameState, setGameState] = useState('playing');
 
   const currentMission = level.missions[currentStep];
 
   useEffect(() => {
+    let currentDb = null;
+
     async function setupDb() {
+      if (currentDb && typeof currentDb.close === 'function') currentDb.close();
       const database = await createMissionDatabase(currentMission.setupSql);
       setDb(database);
+      currentDb = database;
     }
     setupDb();
+
+    return () => {
+      if (currentDb && typeof currentDb.close === 'function') currentDb.close();
+    };
   }, [currentStep, currentMission.setupSql]);
 
   const handleRestartLevel = async () => {
@@ -33,7 +39,7 @@ export function useGameEngine(level) {
     setQuery('');
     setErrorMessage('');
     setQueryResult(null);
-    setGameState('playing'); // Reseta a máquina de estados
+    setGameState('playing');
 
     const progress = getGameProgress();
     saveGameProgress({ ...progress, currentMissionId: level.missions[0].id });
@@ -52,7 +58,7 @@ export function useGameEngine(level) {
     }, 4000);
 
     if (nextLives <= 0) {
-      setGameState('game_over'); // Transição de estado
+      setGameState('game_over');
     }
   };
 
@@ -70,17 +76,22 @@ export function useGameEngine(level) {
     const isCorrect = currentMission.validate(result, freshDb);
 
     if (!isCorrect) {
-      handleWrongAnswer('A query rodou, mas o resultado não atende ao objetivo da missão ou o banco não foi modificado corretamente.');
+      handleWrongAnswer('A query rodou, mas o resultado não atende ao objetivo da missão.');
       return;
     }
 
     setDb(freshDb);
     setQueryResult(result);
-    setGameState('success'); // Transição de estado
+    setGameState('success');
 
     const progress = getGameProgress();
-    progress.stars[currentMission.id] = 1;
-    saveGameProgress(progress);
+    const earnedStars = lives;
+    const currentStars = progress.stars[currentMission.id] || 0;
+
+    if (earnedStars > currentStars) {
+      progress.stars[currentMission.id] = earnedStars;
+      saveGameProgress(progress);
+    }
   };
 
   const handleNextMission = () => {
@@ -93,14 +104,14 @@ export function useGameEngine(level) {
     if (currentStep + 1 < level.missions.length) {
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
-      setGameState('playing'); // Volta a jogar
+      setGameState('playing');
 
       saveGameProgress({
         ...progress,
         currentMissionId: level.missions[nextStep].id
       });
     } else {
-      setGameState('level_completed'); // Terminou o nível
+      setGameState('level_completed');
 
       saveGameProgress({
         ...progress,
@@ -116,7 +127,7 @@ export function useGameEngine(level) {
     setQuery,
     errorMessage,
     queryResult,
-    gameState, // Exportamos apenas o estado atual
+    gameState,
     handleSubmit,
     handleNextMission,
     handleRestartLevel

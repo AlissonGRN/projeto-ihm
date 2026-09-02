@@ -19,7 +19,6 @@ export function GamePage({ level, onBack }) {
     handleRestartLevel
   } = useGameEngine(level);
 
-  // Controle de interface baseado estritamente na Máquina de Estados
   if (gameState === 'game_over') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
@@ -58,7 +57,11 @@ export function GamePage({ level, onBack }) {
       <ErrorToast message={errorMessage} />
 
       {gameState === 'success' && (
-        <SuccessModal result={queryResult} onNext={handleNextMission} />
+        <SuccessModal
+          result={queryResult}
+          onNext={handleNextMission}
+          earnedStars={lives}
+        />
       )}
 
       <div className="max-w-2xl mx-auto">
