@@ -1,20 +1,31 @@
 ==================================================
- GABARITO DE CONSULTAS SQL - CYBERPUNK EDITION
+ GABARITO DE CONSULTAS SQL - 8 NÍVEIS
 ==================================================
 
-NÍVEL 1: Infiltração de Rede
---------------------------------------------------
-Missão 1: O Primeiro Acesso
-Consulta: SELECT * FROM funcionarios;
+NÍVEL 1: Fundamentos de Extração
+1. SELECT * FROM funcionarios;
+2. SELECT nome, cargo FROM funcionarios;
 
-Missão 2: Filtro de Alvos
-Consulta: SELECT nome, setor FROM funcionarios WHERE cargo = 'Engenheira de Dados';
+NÍVEL 2: Filtros e Condições
+3. SELECT * FROM funcionarios WHERE setor = 'Financeiro';
+4. SELECT * FROM pagamentos WHERE valor > 5000;
 
-Missão 3: Varredura de Conexões
-Consulta: SELECT * FROM logs_rede WHERE acao = 'DOWNLOAD_ARQUIVO';
+NÍVEL 3: Ordenação e Limites
+5. SELECT nome_arquivo, tamanho_mb FROM arquivos ORDER BY tamanho_mb DESC;
+6. SELECT * FROM logs ORDER BY id DESC LIMIT 3;
 
---------------------------------------------------
-NÍVEL 2: Cruzamento de Dados e Transações
---------------------------------------------------
-Missão 4: Auditoria de Contas
-Consulta: SELECT * FROM transacoes WHERE valor > 5000;
+NÍVEL 4: Funções de Agregação
+7. SELECT SUM(valor) FROM desvios;
+8. SELECT COUNT(*) FROM alertas WHERE status = 'Bloqueado';
+
+NÍVEL 5: Agrupamento de Dados
+9. SELECT setor, AVG(salario) FROM funcionarios GROUP BY setor;
+
+NÍVEL 6: Conexões (INNER JOIN)
+10. SELECT jogadores.nome, clubes.nome_clube FROM jogadores INNER JOIN clubes ON jogadores.clube_id = clubes.id;
+
+NÍVEL 7: Múltiplas Tabelas
+11. SELECT alunos.nome, disciplinas.disciplina FROM matriculas INNER JOIN alunos ON matriculas.aluno_id = alunos.id INNER JOIN disciplinas ON matriculas.disc_id = disciplinas.id;
+
+NÍVEL 8: Subconsultas (Subqueries)
+12. SELECT nome, salario FROM executivos WHERE salario > (SELECT AVG(salario) FROM executivos);
