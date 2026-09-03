@@ -1,49 +1,45 @@
 export function LevelCard({ level, progress, onSelect }) {
-  const isUnlocked = level.id <= progress.unlockedLevel;
-
-  const levelStars = level.missions.reduce((acc, mission) => {
-    return acc + (progress.stars[mission.id] || 0);
-  }, 0);
-
-  const maxLevelStars = level.missions.length * 3;
+  const levelStars = progress.stars?.[level.id] || 0;
+  const totalMissions = level.missions ? level.missions.length : 0;
+  const isUnlocked = level.id === 1 || (progress.stars?.[level.id - 1] !== undefined);
 
   return (
     <div
-      onClick={isUnlocked ? onSelect : undefined}
-      className={`relative p-6 rounded-2xl border transition-all ${isUnlocked
-        ? 'bg-white border-gray-200 shadow-sm hover:shadow-md hover:border-blue-400 cursor-pointer group'
-        : 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed'
+      onClick={() => isUnlocked && onSelect()}
+      className={`p-6 rounded-sm border font-mono transition-all relative overflow-hidden ${isUnlocked
+        ? 'bg-gray-950 border-gray-700 hover:border-emerald-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)] cursor-pointer group'
+        : 'bg-black/40 border-gray-900 opacity-50 cursor-not-allowed'
         }`}
     >
       <div className="flex justify-between items-start mb-4">
-        <span className={`text-xs font-bold px-3 py-1 rounded-full ${isUnlocked ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-600'
-          }`}>
-          Nível {level.id}
-        </span>
-
-        {isUnlocked && (
-          <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg border border-yellow-100">
-            <span className="text-yellow-500 text-sm">★</span>
-            <span className="text-sm font-bold text-yellow-700">{levelStars}/{maxLevelStars}</span>
-          </div>
-        )}
+        <span className="text-xs text-gray-500 tracking-widest">NÓ_0{level.id}</span>
+        <div className="flex gap-1 text-base">
+          {[1, 2, 3].map((starIndex) => (
+            <span
+              key={starIndex}
+              className={starIndex <= levelStars ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-gray-800'}
+            >
+              ★
+            </span>
+          ))}
+        </div>
       </div>
 
-      <h2 className={`text-xl font-bold mb-2 ${isUnlocked ? 'text-gray-900 group-hover:text-blue-600' : 'text-gray-500'}`}>
+      <h3 className={`text-lg font-bold uppercase tracking-wider mb-2 transition-colors ${isUnlocked ? 'text-gray-100 group-hover:text-emerald-400' : 'text-gray-600'
+        }`}>
         {level.title}
-      </h2>
+      </h3>
 
-      <p className={`text-sm ${isUnlocked ? 'text-gray-600' : 'text-gray-400'}`}>
+      <p className="text-xs text-gray-400 mb-6 line-clamp-2">
         {level.description}
       </p>
 
-      {!isUnlocked && (
-        <div className="absolute inset-0 bg-gray-50/50 backdrop-blur-[1px] flex items-center justify-center rounded-2xl">
-          <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg shadow-lg">
-            Bloqueado
-          </span>
-        </div>
-      )}
+      <div className="flex justify-between items-center pt-4 border-t border-gray-900 text-xs">
+        <span className="text-gray-500">{totalMissions} Etapas de Invasão</span>
+        <span className={isUnlocked ? 'text-emerald-500 font-bold group-hover:translate-x-1 transition-transform' : 'text-gray-700'}>
+          {isUnlocked ? '[ ACESSAR ]' : '[ BLOQUEADO ]'}
+        </span>
+      </div>
     </div>
   );
 }
